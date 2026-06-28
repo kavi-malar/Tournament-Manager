@@ -1,0 +1,28 @@
+# Node modules
+node_modules/
+
+# Environment files
+.env
+backend/.env
+frontend/.env
+
+# Logs
+*.log
+
+# Build files
+build/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Dependency lock (optional)
+package-lock.json
+
+# Coverage
+coverage/
