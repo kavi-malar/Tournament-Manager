@@ -82,13 +82,7 @@ Frontend runs at: `http://localhost:3000`
 
 ---
 
-## 🔑 Demo Credentials
 
-| Role      | Email                    | Password  |
-|-----------|--------------------------|-----------|
-| Admin     | admin@tournament.com     | Admin@123 |
-| Organizer | john@example.com         | Admin@123 |
-| Player    | jane@example.com         | Admin@123 |
 
 > Note: These are hashed with bcrypt in the seed data. Use them after running the schema.
 
@@ -148,7 +142,7 @@ tournament-manager/
 
 ### Authentication
 - JWT-based login & registration
-- Role-based access: Admin, Organizer, Player
+- Role-based access:  Organizer, Player
 - Protected routes
 
 ### Tournaments
