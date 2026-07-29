@@ -14,23 +14,11 @@ import TournamentDetail from './pages/TournamentDetail';
 import Teams from './pages/Teams';
 import TeamDetail from './pages/TeamDetail';
 import Matches from './pages/Matches';
-import Leaderboard from './pages/Leaderboard';
-import PlayerProfile from './pages/PlayerProfile';
-import UserManagement from './pages/UserManagement';
-import AuditLog from './pages/AuditLog';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="loading"><div className="spinner" /></div>;
   return user ? children : <Navigate to="/login" />;
-};
-
-const AdminRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  if (loading) return <div className="loading"><div className="spinner" /></div>;
-  if (!user) return <Navigate to="/login" />;
-  if (user.role !== 'admin') return <Navigate to="/dashboard" />;
-  return children;
 };
 
 const PublicRoute = ({ children }) => {
@@ -54,10 +42,6 @@ function App() {
             <Route path="teams" element={<Teams />} />
             <Route path="teams/:id" element={<TeamDetail />} />
             <Route path="matches" element={<Matches />} />
-            <Route path="leaderboard" element={<Leaderboard />} />
-            <Route path="profile/:id" element={<PlayerProfile />} />
-            <Route path="admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
-            <Route path="admin/audit" element={<AdminRoute><AuditLog /></AdminRoute>} />
           </Route>
         </Routes>
       </Router>

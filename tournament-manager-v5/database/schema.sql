@@ -217,13 +217,8 @@ DELIMITER //
 -- Procedure: Generate Round Robin fixtures for a tournament
 CREATE PROCEDURE GenerateRoundRobinFixtures(IN p_tournament_id INT, IN p_start_date DATETIME, IN p_venue VARCHAR(150))
 BEGIN
-    DECLARE done INT DEFAULT 0;
-    DECLARE team1 INT;
-    DECLARE team2 INT;
-    DECLARE round_num INT DEFAULT 1;
-    DECLARE match_num INT DEFAULT 1;
-    DECLARE match_date DATETIME;
-    DECLARE days_offset INT DEFAULT 0;
+    -- All DECLAREs must come first in the block, before any other statement
+    DECLARE total_teams INT DEFAULT 0;
 
     -- Get all registered teams into a temp table
     CREATE TEMPORARY TABLE IF NOT EXISTS temp_teams AS
@@ -231,29 +226,21 @@ BEGIN
         FROM tournament_registrations
         WHERE tournament_id = p_tournament_id AND status = 'approved';
 
-    DECLARE total_teams INT;
     SELECT COUNT(*) INTO total_teams FROM temp_teams;
 
-    -- Generate all pairs
-    BEGIN
-        DECLARE cur1 CURSOR FOR SELECT team_id FROM temp_teams ORDER BY rn;
-        DECLARE cur2 CURSOR FOR SELECT team_id FROM temp_teams ORDER BY rn;
-        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
-
-        -- Simple pairwise approach using cross join
-        INSERT INTO matches (tournament_id, team1_id, team2_id, match_date, venue, round_number, match_number, status)
-        SELECT
-            p_tournament_id,
-            t1.team_id,
-            t2.team_id,
-            DATE_ADD(p_start_date, INTERVAL (ROW_NUMBER() OVER (ORDER BY t1.rn, t2.rn) - 1) DAY),
-            p_venue,
-            CEIL((ROW_NUMBER() OVER (ORDER BY t1.rn, t2.rn)) / FLOOR(total_teams / 2)),
-            ROW_NUMBER() OVER (ORDER BY t1.rn, t2.rn),
-            'scheduled'
-        FROM temp_teams t1
-        JOIN temp_teams t2 ON t1.rn < t2.rn;
-    END;
+    -- Generate all pairs (simple round-robin cross join)
+    INSERT INTO matches (tournament_id, team1_id, team2_id, match_date, venue, round_number, match_number, status)
+    SELECT
+        p_tournament_id,
+        t1.team_id,
+        t2.team_id,
+        DATE_ADD(p_start_date, INTERVAL (ROW_NUMBER() OVER (ORDER BY t1.rn, t2.rn) - 1) DAY),
+        p_venue,
+        CEIL((ROW_NUMBER() OVER (ORDER BY t1.rn, t2.rn)) / GREATEST(FLOOR(total_teams / 2), 1)),
+        ROW_NUMBER() OVER (ORDER BY t1.rn, t2.rn),
+        'scheduled'
+    FROM temp_teams t1
+    JOIN temp_teams t2 ON t1.rn < t2.rn;
 
     DROP TEMPORARY TABLE IF EXISTS temp_teams;
 END //
@@ -327,10 +314,11 @@ DELIMITER ;
 -- SAMPLE DATA
 -- ============================================================
 
+-- Password for all three seed accounts is: password123
 INSERT IGNORE INTO users (username, email, password, role) VALUES
-('admin', 'admin@tournament.com','$2b$10$7QJ8H5Gz7rWkG7qR8z7Q8uK1zZlFzYxjvG0gZz9y1xYw8vH9p7Q2G','admin'),
-('john_doe', 'john@example.com','$2b$10$7QJ8H5Gz7rWkG7qR8z7Q8uK1zZlFzYxjvG0gZz9y1xYw8vH9p7Q2G' ,'organizer'),
-('jane_smith', 'jane@example.com','$2b$10$7QJ8H5Gz7rWkG7qR8z7Q8uK1zZlFzYxjvG0gZz9y1xYw8vH9p7Q2G', 'player');
+('admin', 'admin@tournament.com', '$2a$10$1sFybo23Fp0DnX3f8TXm8OqvLevSxgNms94Lh6GfwkZcfepvZVit6', 'admin'),
+('john_doe', 'john@example.com', '$2a$10$1sFybo23Fp0DnX3f8TXm8OqvLevSxgNms94Lh6GfwkZcfepvZVit6', 'organizer'),
+('jane_smith', 'jane@example.com', '$2a$10$1sFybo23Fp0DnX3f8TXm8OqvLevSxgNms94Lh6GfwkZcfepvZVit6', 'player');
 
 INSERT IGNORE INTO teams (name, captain_id, wins, losses, draws, points) VALUES
 ('Thunder Wolves', 2, 5, 2, 1, 16),
@@ -339,8 +327,8 @@ INSERT IGNORE INTO teams (name, captain_id, wins, losses, draws, points) VALUES
 ('Storm Riders', 3, 6, 1, 0, 18);
 
 INSERT IGNORE INTO tournaments (name, description, sport, format, status, max_teams, prize_pool, start_date, end_date, organizer_id) VALUES
-('Spring Championship 2025', 'Annual spring football championship', 'Football', 'single_elimination', 'ongoing', 16, '$5000', '2026-03-01', '2026-04-30', 2),
-('Summer Smash Basketball', 'Fast-paced summer basketball tournament', 'Basketball', 'round_robin', 'upcoming', 8, '$2000', '2026-06-01', '2026-07-15', 2),
+('Spring Championship 2025', 'Annual spring football championship', 'Football', 'single_elimination', 'ongoing', 16, '$5000', '2025-03-01', '2025-04-30', 2),
+('Summer Smash Basketball', 'Fast-paced summer basketball tournament', 'Basketball', 'round_robin', 'upcoming', 8, '$2000', '2025-06-01', '2025-07-15', 2),
 ('City Cricket Cup', 'Inter-college cricket competition', 'Cricket', 'league', 'completed', 10, '$3000', '2025-01-10', '2025-02-28', 3);
 
 INSERT IGNORE INTO tournament_registrations (tournament_id, team_id) VALUES

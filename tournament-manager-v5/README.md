@@ -33,6 +33,11 @@ A full-featured tournament management system built with React, Node.js, Express,
 
 ```bash
 mysql -u root -p < database/schema.sql
+
+//
+mysql -u root -p
+USE TOurnament_manager
+ SOURCE C:/Users/kaviy/Downloads/tournament-manager-v51/tournament-manager-v5/database/schema.sql;
 ```
 
 Or open MySQL and paste the contents of `database/schema.sql`.

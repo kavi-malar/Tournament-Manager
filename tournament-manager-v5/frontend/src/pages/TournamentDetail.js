@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { FiCalendar, FiUsers, FiDollarSign, FiUser, FiX, FiPlus, FiEdit2, FiTrash2, FiActivity, FiCheck, FiXCircle, FiZap, FiMessageSquare, FiRefreshCw } from 'react-icons/fi';
+import { FiCalendar, FiUsers, FiDollarSign, FiUser, FiX, FiPlus, FiEdit2, FiTrash2, FiActivity, FiCheck, FiXCircle, FiZap } from 'react-icons/fi';
 import { GiTrophy } from 'react-icons/gi';
 import { useAuth } from '../context/AuthContext';
 
@@ -17,9 +17,6 @@ export default function TournamentDetail() {
   const [allTeams, setAllTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('overview');
-  const [announcements, setAnnouncements] = useState([]);
-  const [announcementForm, setAnnouncementForm] = useState({ title: '', message: '' });
-  const [liveRefreshing, setLiveRefreshing] = useState(false);
 
   // Modal type: 'register'|'addMatch'|'editMatch'|'result'|'editTournament'|'generateFixtures'|null
   const [modalType, setModalType] = useState(null);
@@ -38,19 +35,17 @@ export default function TournamentDetail() {
 
   const fetchAll = async () => {
     try {
-      const [tRes, sRes, mRes, aRes, annRes] = await Promise.all([
+      const [tRes, sRes, mRes, aRes] = await Promise.all([
         axios.get('/api/tournaments/' + id),
         axios.get('/api/tournaments/' + id + '/standings'),
         axios.get('/api/matches?tournament_id=' + id),
         axios.get('/api/teams'),
-        axios.get('/api/tournaments/' + id + '/announcements').catch(() => ({ data: { announcements: [] } })),
       ]);
       setTournament(tRes.data.tournament);
       setTeams(tRes.data.teams);
       setStandings(sRes.data.standings);
       setMatches(mRes.data.matches);
       setAllTeams(aRes.data.teams);
-      setAnnouncements(annRes.data.announcements || []);
       if (user) {
         const myTeam = aRes.data.teams.find(t => t.captain_id === user.id);
         if (myTeam) setMyTeamId(myTeam.id);
@@ -59,44 +54,7 @@ export default function TournamentDetail() {
     finally { setLoading(false); }
   };
 
-  const refreshLive = async () => {
-    setLiveRefreshing(true);
-    try {
-      const mRes = await axios.get('/api/matches?tournament_id=' + id);
-      setMatches(mRes.data.matches);
-    } catch (_) {}
-    finally { setLiveRefreshing(false); }
-  };
-
-  // Auto-refresh ongoing matches every 30s
-  useEffect(() => {
-    const hasLive = matches.some(m => m.status === 'ongoing');
-    if (!hasLive) return;
-    const interval = setInterval(refreshLive, 30000);
-    return () => clearInterval(interval);
-  }, [matches]);
-
   useEffect(() => { fetchAll(); }, [id]);
-
-  const handlePostAnnouncement = async (e) => {
-    e.preventDefault();
-    if (!announcementForm.title || !announcementForm.message) return toast.error('Title and message required');
-    try {
-      await axios.post('/api/tournaments/' + id + '/announcements', announcementForm);
-      toast.success('Announcement posted!');
-      setAnnouncementForm({ title: '', message: '' });
-      fetchAll();
-    } catch (err) { toast.error(err.response?.data?.message || 'Failed to post'); }
-  };
-
-  const handleDeleteAnnouncement = async (annId) => {
-    if (!window.confirm('Delete this announcement?')) return;
-    try {
-      await axios.delete('/api/tournaments/' + id + '/announcements/' + annId);
-      toast.success('Deleted');
-      fetchAll();
-    } catch (err) { toast.error('Failed to delete'); }
-  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -270,9 +228,9 @@ export default function TournamentDetail() {
         )}
 
         <div className="tabs">
-          {['overview', 'standings', 'matches', 'bracket', 'teams', 'announcements'].map(t => (
+          {['overview', 'standings', 'matches', 'bracket', 'teams'].map(t => (
             <button key={t} className={`tab-btn ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-              {t === 'announcements' ? `📢 ${t.charAt(0).toUpperCase() + t.slice(1)}${announcements.length ? ` (${announcements.length})` : ''}` : t.charAt(0).toUpperCase() + t.slice(1)}
+              {t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           ))}
         </div>
@@ -321,16 +279,6 @@ export default function TournamentDetail() {
                 <button className="btn btn-secondary" onClick={() => { setFixtureForm({ start_date: tournament.start_date?.slice(0,10), venue: '' }); setModalType('generateFixtures'); }}>
                   <FiZap size={15} /> Auto-Generate Fixtures
                 </button>
-                <button className="btn btn-secondary" onClick={refreshLive} disabled={liveRefreshing} title="Refresh scores">
-                  <FiRefreshCw size={15} style={{ animation: liveRefreshing ? 'spin 1s linear infinite' : 'none' }} />
-                </button>
-              </div>
-            )}
-            {matches.some(m => m.status === 'ongoing') && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, marginBottom: 12, fontSize: 12 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block', animation: 'pulse 1.5s ease-in-out infinite' }} />
-                <strong style={{ color: '#ef4444' }}>LIVE</strong>
-                <span style={{ color: 'var(--text-muted)' }}>— Scores refresh automatically every 30 seconds</span>
               </div>
             )}
             {matches.length === 0 ? (
@@ -338,7 +286,7 @@ export default function TournamentDetail() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {matches.map(m => (
-                  <div key={m.id} className="match-card" style={{ border: m.status === 'ongoing' ? '1px solid rgba(239,68,68,0.4)' : undefined }}>
+                  <div key={m.id} className="match-card">
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', minWidth: 80 }}>
                       Round {m.round_number}<br />
                       {new Date(m.match_date).toLocaleDateString()}<br />
@@ -349,13 +297,8 @@ export default function TournamentDetail() {
                         <div className="team-n" style={{ color: m.winner_id === m.team1_id ? 'var(--accent)' : 'inherit' }}>{m.team1_name}</div>
                       </div>
                       <div className="vs-block">
-                        {m.status === 'completed' ? <div className="vs-score">{m.team1_score} – {m.team2_score}</div>
-                          : m.status === 'ongoing' ? <div className="vs-score" style={{ color: '#ef4444' }}>{m.team1_score} – {m.team2_score}</div>
-                          : <div className="vs-text">VS</div>}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                          {m.status === 'ongoing' && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444', display: 'inline-block', animation: 'pulse 1.5s ease-in-out infinite' }} />}
-                          <span className={`badge badge-${m.status}`}>{m.status === 'ongoing' ? 'LIVE' : m.status}</span>
-                        </div>
+                        {m.status === 'completed' ? <div className="vs-score">{m.team1_score} – {m.team2_score}</div> : <div className="vs-text">VS</div>}
+                        <span className={`badge badge-${m.status}`} style={{ marginTop: 4 }}>{m.status}</span>
                       </div>
                       <div className="team-block right">
                         <div className="team-n" style={{ color: m.winner_id === m.team2_id ? 'var(--accent)' : 'inherit' }}>{m.team2_name}</div>
@@ -452,54 +395,6 @@ export default function TournamentDetail() {
                       </div>
                     </div>
                   </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ANNOUNCEMENTS */}
-        {tab === 'announcements' && (
-          <div>
-            {canManage && (
-              <div className="card" style={{ marginBottom: 16 }}>
-                <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>📢 Post Announcement</h3>
-                <form onSubmit={handlePostAnnouncement}>
-                  <div className="form-group">
-                    <label className="form-label">Title</label>
-                    <input className="form-input" placeholder="e.g. Match postponed, Venue change..." value={announcementForm.title} onChange={e => setAnnouncementForm(f => ({ ...f, title: e.target.value }))} required />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Message</label>
-                    <textarea className="form-input" rows={3} placeholder="Full announcement details..." value={announcementForm.message} onChange={e => setAnnouncementForm(f => ({ ...f, message: e.target.value }))} required style={{ resize: 'vertical' }} />
-                  </div>
-                  <button type="submit" className="btn btn-primary"><FiMessageSquare size={14} /> Post Announcement</button>
-                </form>
-              </div>
-            )}
-            {announcements.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">📢</div>
-                <h3>No Announcements</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>{canManage ? 'Post an announcement above.' : 'The organizer has not posted any announcements yet.'}</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {announcements.map(a => (
-                  <div key={a.id} className="card" style={{ borderLeft: '3px solid var(--accent)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: 15 }}>{a.title}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                          by {a.author_name} · {new Date(a.created_at).toLocaleString()}
-                        </div>
-                      </div>
-                      {canManage && (
-                        <button className="btn btn-danger btn-sm" onClick={() => handleDeleteAnnouncement(a.id)}><FiTrash2 size={12} /></button>
-                      )}
-                    </div>
-                    <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: 'var(--text)' }}>{a.message}</p>
-                  </div>
                 ))}
               </div>
             )}

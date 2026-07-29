@@ -179,12 +179,8 @@ export default function Tournaments() {
                 {isOrgAdmin && (
                   <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 6, zIndex: 2 }}
                     onClick={e => e.stopPropagation()}>
-                    {/* BUG FIX: Show edit for admin or the organizer who owns this tournament */}
-                    {(user?.role === 'admin' || t.organizer_id === user?.id) && (
-                      <button className="btn btn-secondary btn-sm" title="Edit" onClick={e => openEdit(t, e)}><FiEdit2 size={12} /></button>
-                    )}
-                    {/* BUG FIX: Show delete for admin or the organizer who owns this tournament */}
-                    {(user?.role === 'admin' || t.organizer_id === user?.id) && (
+                    <button className="btn btn-secondary btn-sm" title="Edit" onClick={e => openEdit(t, e)}><FiEdit2 size={12} /></button>
+                    {user?.role === 'admin' && (
                       <button className="btn btn-danger btn-sm" title="Delete"
                         onClick={e => { e.stopPropagation(); handleDelete(t); }}><FiTrash2 size={12} /></button>
                     )}

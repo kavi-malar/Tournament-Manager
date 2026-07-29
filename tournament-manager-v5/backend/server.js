@@ -5,22 +5,23 @@ require('dotenv').config();
 
 const app = express();
 
+// Middleware
 app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/tournaments', require('./routes/tournaments'));
-app.use('/api/tournaments/:id/announcements', require('./routes/announcements'));
 app.use('/api/teams', require('./routes/teams'));
 app.use('/api/matches', require('./routes/matches'));
 app.use('/api/dashboard', require('./routes/dashboard'));
-app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/users', require('./routes/users'));
 
+// Health check
 app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'Tournament Manager API Running' }));
 
+// Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ success: false, message: 'Server error' });

@@ -73,11 +73,7 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="auth-divider"><span>demo credentials</span></div>
-        <div style={{ background: 'var(--bg-secondary)', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
-          <div><span style={{ color: 'var(--text-muted)' }}>Email:</span> admin@tournament.com</div>
-          <div><span style={{ color: 'var(--text-muted)' }}>Password:</span> Admin@123</div>
-        </div>
+       
 
         <p style={{ textAlign: 'center', marginTop: 24, fontSize: 14, color: 'var(--text-muted)' }}>
           Don't have an account?{' '}
